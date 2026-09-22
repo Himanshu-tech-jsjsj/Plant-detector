@@ -1,0 +1,14 @@
+[build]
+  publish = "dist"
+  command = "vite build"
+
+[[redirects]]
+  from = "/api/*"
+  to = "https://ais-dev-r2agnis3l6k53xfbzyep3y-831511779032.asia-east1.run.app/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

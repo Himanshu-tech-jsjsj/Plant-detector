@@ -1,0 +1,10 @@
+{
+  "name": "Remix FloraMate AI",
+  "description": "A high-fidelity Progressive Web Application (PWA) for instantaneous plant health diagnosis with integrated Gemini Vision API and structured Hinglish guidance.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
