@@ -19,15 +19,9 @@ import {
   NOT_A_LEAF_DIAGNOSIS,
 } from './data/mockData';
 import {
-  Sparkles,
   Camera,
-  CheckCircle2,
   RefreshCw,
-  Upload,
   Zap,
-  Mic,
-  Volume2,
-  VolumeX,
   Leaf
 } from 'lucide-react';
 
@@ -144,6 +138,10 @@ export default function App() {
 
   // Ultra-fast AI analysis on uploaded/captured image with Gemini API
   const handleAnalyzeImage = async (rawImageDataUrl: string) => {
+    if (!rawImageDataUrl || rawImageDataUrl.length < 50) {
+      return;
+    }
+
     // 1. Instantly trigger synthesized "blich" sound to confirm scanning start
     playScanBlichSound();
 
@@ -155,7 +153,16 @@ export default function App() {
 
     try {
       // Step 1: Sub-millisecond client compression (<15ms)
-      const compressedImageDataUrl = await compressLeafImage(rawImageDataUrl, 800, 0.75);
+      let compressedImageDataUrl = rawImageDataUrl;
+      try {
+        const compressed = await compressLeafImage(rawImageDataUrl, 800, 0.75);
+        if (compressed && compressed.length > 50) {
+          compressedImageDataUrl = compressed;
+        }
+      } catch (compErr) {
+        console.warn('Client compression caught, using raw image:', compErr);
+      }
+
       setScanStatusMessage('Gemini AI leaf scanner bimari & dawai pehchan raha hai...');
 
       // Step 2: Server diagnosis call with multi-model fallback
@@ -167,6 +174,10 @@ export default function App() {
           mimeType: 'image/jpeg',
         }),
       });
+
+      if (!response.ok) {
+        throw new Error(`Server returned HTTP ${response.status}`);
+      }
 
       const data = await response.json();
 

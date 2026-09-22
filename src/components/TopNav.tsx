@@ -6,13 +6,7 @@ import {
   VolumeX,
   Sparkles,
   Camera,
-  CheckCircle2,
-  Info,
-  RotateCcw,
-  Leaf,
-  Download,
-  Smartphone,
-  Globe
+  Leaf
 } from 'lucide-react';
 import { ScanViewMode } from '../types';
 

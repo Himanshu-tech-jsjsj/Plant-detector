@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Camera, Upload, Sparkles, AlertCircle, AlertOctagon } from 'lucide-react';
+import { Camera, Upload, Sparkles, AlertOctagon } from 'lucide-react';
 import { playScanBlichSound } from '../utils/audioEffects';
 
 interface CircularCameraScanSectionProps {
@@ -36,7 +36,6 @@ export const CircularCameraScanSection: React.FC<CircularCameraScanSectionProps>
         ref={fileInputRef}
         onChange={handleFileChange}
         accept="image/*"
-        capture="environment"
         className="hidden"
       />
 

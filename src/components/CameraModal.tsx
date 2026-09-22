@@ -24,49 +24,62 @@ export const CameraModal: React.FC<CameraModalProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let isCancelled = false;
     if (!isOpen) {
       stopCamera();
       return;
     }
-    startCamera();
+
+    const initCamera = async () => {
+      try {
+        setCameraError(null);
+        if (stream) {
+          stream.getTracks().forEach((track) => track.stop());
+        }
+
+        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+          setCameraError('Camera API is not supported in this browser window.');
+          return;
+        }
+
+        const mediaStream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: { ideal: facingMode },
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+          },
+          audio: false,
+        });
+
+        if (isCancelled) {
+          mediaStream.getTracks().forEach((track) => track.stop());
+          return;
+        }
+
+        setStream(mediaStream);
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+          videoRef.current.play().catch((playErr) => {
+            console.warn('Camera video play caught:', playErr);
+          });
+        }
+      } catch (err: any) {
+        if (!isCancelled) {
+          console.warn('Camera access error:', err);
+          setCameraError(
+            'Camera access was restricted or not available. Aap photo upload kar sakte hain ya demo leaf chun sakte hain.'
+          );
+        }
+      }
+    };
+
+    initCamera();
+
     return () => {
+      isCancelled = true;
       stopCamera();
     };
   }, [isOpen, facingMode]);
-
-  const startCamera = async () => {
-    try {
-      setCameraError(null);
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        setCameraError('Camera API is not supported in this browser window.');
-        return;
-      }
-
-      const mediaStream = await navigator.mediaDevices.getUserMedia({
-        video: {
-          facingMode: { ideal: facingMode },
-          width: { ideal: 1280 },
-          height: { ideal: 720 },
-        },
-        audio: false,
-      });
-
-      setStream(mediaStream);
-      if (videoRef.current) {
-        videoRef.current.srcObject = mediaStream;
-        videoRef.current.play();
-      }
-    } catch (err: any) {
-      console.warn('Camera access error:', err);
-      setCameraError(
-        'Camera access was restricted or not available. Aap photo upload kar sakte hain ya demo leaf chun sakte hain.'
-      );
-    }
-  };
 
   const stopCamera = () => {
     if (stream) {
@@ -79,21 +92,28 @@ export const CameraModal: React.FC<CameraModalProps> = ({
     if (videoRef.current && canvasRef.current) {
       const video = videoRef.current;
       const canvas = canvasRef.current;
-      canvas.width = video.videoWidth || 640;
-      canvas.height = video.videoHeight || 480;
+      const w = video.videoWidth || 640;
+      const h = video.videoHeight || 480;
+      canvas.width = w;
+      canvas.height = h;
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
-        stopCamera();
-        playScanBlichSound();
-        onCaptureImage(dataUrl);
+        try {
+          ctx.drawImage(video, 0, 0, w, h);
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.85);
+          stopCamera();
+          playScanBlichSound();
+          onCaptureImage(dataUrl);
+          return;
+        } catch (drawErr) {
+          console.warn('Canvas draw error:', drawErr);
+        }
       }
-    } else {
-      // Fallback
-      playScanBlichSound();
-      onSelectSample('blight');
     }
+    // Fallback if camera stream was not ready
+    stopCamera();
+    playScanBlichSound();
+    onSelectSample('blight');
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {

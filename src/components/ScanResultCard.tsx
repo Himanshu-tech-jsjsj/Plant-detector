@@ -1,17 +1,10 @@
 import React, { useState } from 'react';
 import { PlantDiagnosis } from '../types';
 import {
-  AlertTriangle,
-  CheckCircle2,
   ShieldAlert,
-  Droplets,
-  Sprout,
-  Info,
-  Sparkles,
   Volume2,
   VolumeX,
   Mic,
-  Share2,
   Camera,
   Layers
 } from 'lucide-react';

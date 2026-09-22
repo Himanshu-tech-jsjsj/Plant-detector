@@ -2,7 +2,7 @@ import express from "express";
 import path from "path";
 import fs from "fs";
 import { fileURLToPath } from "url";
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -456,8 +456,8 @@ app.post("/api/diagnose", async (req, res) => {
       return res.json({ success: true, diagnosis: defaultNotALeafResult, responseTimeMs: 40 });
     }
 
-    // Clean base64 string
-    const cleanedBase64 = imageBase64 ? imageBase64.replace(/^data:image\/[a-z]+;base64,/, "") : "";
+    // Clean base64 string safely matching any mime data URL
+    const cleanedBase64 = imageBase64 ? imageBase64.replace(/^data:[^;]+;base64,/, "") : "";
 
     // If image is suspiciously small/empty, treat as not a leaf
     if (!cleanedBase64 || cleanedBase64.length < 120) {
@@ -528,8 +528,8 @@ Return a raw JSON object strictly conforming to this structure:
   "hotspots": array of { "x": number, "y": number, "radius": number, "label": string }
 }`;
 
-    // Candidate models in priority order: gemini-3.1-flash-lite is fastest and rock-solid
-    const candidateModels = ["gemini-3.1-flash-lite", "gemini-flash-latest", "gemini-3.8-flash"];
+    // Candidate models in priority order: gemini-3.8-flash and gemini-3.1-flash-lite
+    const candidateModels = ["gemini-3.8-flash", "gemini-3.1-flash-lite"];
     let parsedData: any = null;
 
     for (const modelName of candidateModels) {
@@ -550,16 +550,20 @@ Return a raw JSON object strictly conforming to this structure:
           config: {
             responseMimeType: "application/json",
             temperature: 0.15,
-            maxOutputTokens: 750,
+            maxOutputTokens: 2048,
           },
         });
 
         const timeoutPromise = new Promise((_, reject) =>
-          setTimeout(() => reject(new Error("Timeout")), 12000)
+          setTimeout(() => reject(new Error("Timeout")), 10000)
         );
 
         const response = (await Promise.race([geminiCall, timeoutPromise])) as any;
-        const rawText = response?.text || "{}";
+        let rawText = (response?.text || "").trim();
+        // Remove markdown code blocks if present
+        rawText = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/i, "").trim();
+        if (!rawText) continue;
+
         const result = JSON.parse(rawText);
         if (result && typeof result === "object" && (result.diseaseName || result.plantName || result.isLeaf !== undefined)) {
           // Normalize isLeaf and status

@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertOctagon, Camera, Mic, Volume2, VolumeX, RefreshCw } from 'lucide-react';
+import { AlertOctagon, Camera, Mic, Volume2, VolumeX } from 'lucide-react';
 import { PlantDiagnosis } from '../types';
 
 interface NotALeafCardProps {
